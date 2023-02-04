@@ -16,14 +16,15 @@ set(MCU atmega328p)
 # Default Baudrate for UART, read avr include/util/setbaud.h for usage
 set(BAUD 57600)
 # The programmer to use, read avrdude manual for list
-set(PROG_TYPE avrispmkII)
-
+set(PROG_TYPE arduino)
+set(DUINO_TTY "/dev/ttyACM0")
+set(DUDE_MCU ATMEGA328P)
 # AVR Fuses, must be in concordance with your hardware and F_CPU
 # https://forum.arduino.cc/t/standard-fuse-settings-for-16mhz-atmega328p/70962/3
-set(E_FUSE 0x05)
-set(H_FUSE 0xde)
-set(L_FUSE 0xff)
-set(LOCK_BIT 0xff)
+set(E_FUSE 0xFD)
+set(H_FUSE 0xDE)
+set(L_FUSE 0xFF)
+set(LOCK_BIT 0xFF)
 
 
 # Use AVR GCC toolchain
@@ -83,8 +84,7 @@ set(ASSEMBLER_OPTS
 string(REPLACE ";" "" ASSEMBLER_OPTS_STRING "${ASSEMBLER_OPTS}")
 set(CMAKE_ASM_FLAGS "${ASSEMBLER_OPTS_STRING}" CACHE STRING "" FORCE)
 # Load all files in bsp folder and application main
-set(SRC_FILES 
-    "main.c"
+set(BSP_SRC_FILES 
     "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/src/adc_basic.c" 
     "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/examples/src/nvmctrl_basic_example.c"
     "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/src/wdt.c"
@@ -109,14 +109,7 @@ set(SRC_FILES
     "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/gcc/dev/atmega328p/avr5/libatmega328p.a"
     ) 
 
-# Create one target
-add_executable(${PRODUCT_NAME}
-                "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/src/protected_io.S" 
-                ${SRC_FILES}
-              )
-# Include headers
-target_include_directories(${PRODUCT_NAME}
-    PUBLIC
+set(BSP_HEADERS
     "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/config"
     "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/examples/include"
     "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/include"
@@ -125,6 +118,29 @@ target_include_directories(${PRODUCT_NAME}
     "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/"
     "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/include"
     "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/include/avr"
+)
+
+# Application sources
+set(SRC_FILES 
+    "main.c"
+    "src/my_printf.c"
+)
+set(INCLUDE_HEADERS
+    "inc"
+)
+
+
+# Create one target
+add_executable(${PRODUCT_NAME}
+                "${CMAKE_SOURCE_DIR}/Uno_rev3_bsp/src/protected_io.S" 
+                ${SRC_FILES}
+                ${BSP_SRC_FILES}
+              )
+# Include headers
+target_include_directories(${PRODUCT_NAME}
+    PUBLIC
+    ${BSP_HEADERS}
+    ${INCLUDE_HEADERS}
 )
 
 
@@ -147,17 +163,18 @@ add_custom_target(hex ALL avr-objcopy -O ihex -R .eeprom -R .fuse -R .lock -R .s
 # use eeprom static variables)
 add_custom_target(eeprom avr-objcopy -j .eeprom --set-section-flags=.eeprom=alloc,load --change-section-lma .eeprom=0 --no-change-warnings -O binary ${PRODUCT_NAME}.elf ${PRODUCT_NAME}.eep DEPENDS hex)
 
-add_custom_target(lss avr-objdump -h -S ${PRODUCT_NAME}.elf > ${PRODUCT_NAME}.lss DEPENDS eeprom)
+add_custom_target(lss avr-objdump -h -S ${PRODUCT_NAME}.elf > ${PRODUCT_NAME}.lst DEPENDS eeprom)
 add_custom_target(size avr-size ${PRODUCT_NAME}.elf lss)
 
 # Flash the firmware with avrdude
-add_custom_target(flash avrdude  -c ${PROG_TYPE} -p ${MCU} -U flash:w:${PRODUCT_NAME}.hex DEPENDS lss)
+#add_custom_target(flash avrdude -v -c ${PROG_TYPE} -P ${DUINO_TTY} -p ${MCU} -b 57600 -D -U flash:w:${PRODUCT_NAME}.hex DEPENDS lss)
+add_custom_target(flash avrdude -v avrdude -F -V -D -c ${PROG_TYPE} -P ${DUINO_TTY} -p ${DUDE_MCU} -b 115200 -U flash:w:${PRODUCT_NAME}.elf DEPENDS lss)
 
 # Flash the eeprom with avrdude
-add_custom_target(flash_eeprom avrdude -c ${PROG_TYPE} -p ${MCU}  -U eeprom:w:${PRODUCT_NAME}.eep DEPENDS eeprom)
+add_custom_target(flash_eeprom avrdude -F -V -c ${PROG_TYPE} -P ${DUINO_TTY} -p ${DUDE_MCU} -b 115200 -U eeprom:w:${PRODUCT_NAME}.eep DEPENDS eeprom)
 
 # Burn fuses
-add_custom_target(fuses avrdude -c ${PROG_TYPE} -p ${MCU}  -U lfuse:w:${L_FUSE}:m -U hfuse:w:${H_FUSE}:m -U efuse:w:${E_FUSE}:m -U lock:w:${LOCK_BIT}:m )
+add_custom_target(fuses avrdude -F -V -c ${PROG_TYPE} -P ${DUINO_TTY} -p ${DUDE_MCU} -b 115200 -U lfuse:w:${L_FUSE}:m -U hfuse:w:${H_FUSE}:m -U efuse:w:${E_FUSE}:m -U lock:w:${LOCK_BIT}:m )
 
 # Clean extra files
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${PRODUCT_NAME}.hex;${PRODUCT_NAME}.eeprom;${PRODUCT_NAME}.lst")
