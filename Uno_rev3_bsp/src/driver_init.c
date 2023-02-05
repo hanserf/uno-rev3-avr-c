@@ -34,128 +34,98 @@
  */
 
 #include "driver_init.h"
+#include "atmel_start_pins.h"
+#include "port.h"
 #include <system.h>
 
 /* Configure pins and initialize registers */
-void ADC_0_initialization(void)
-{
-
-	ADC_0_init();
+void ADC_0_initialization(void) {
+#if USE_ADC
+    ADC_0_init();
+#endif
 }
 
 /* Configure pins and initialize registers */
-void AC_0_initialization(void)
-{
-
-	AC_0_init();
+void AC_0_initialization(void) {
+#if USE_ADC
+    AC_0_init();
+#endif
 }
 
 /* configure pins and initialize registers */
-void I2C_0_initialization(void)
-{
-	I2C_0_init();
+void I2C_0_initialization(void) {
+#if USE_I2C
+    I2C_0_init();
+#endif
 }
 
 /* configure the pins and initialize the registers */
-void SPI_0_initialization(void)
-{
+void SPI_0_initialization(void) {
+#if USE_SPI
+    // Set pin direction to input
+    PORT_set_pin_dir(SPI_MISO_PORT, SPI_MISO_PIN, PORT_DIR_IN);
+    PORT_set_pin_pull_mode(SPI_MISO_PORT, SPI_MISO_PIN, PORT_PULL_OFF);
+    // Set pin direction to output
+    PORT_set_pin_dir(SPI_MOSI_PORT, SPI_MOSI_PIN, PORT_DIR_OUT);
+    PORT_set_pin_level(SPI_MOSI_PORT, SPI_MOSI_PIN, false);
+    // Set pin direction to output
+    PORT_set_pin_dir(SPI_SCK_PORT, SPI_SCK_PIN, PORT_DIR_OUT);
+    PORT_set_pin_level(SPI_SCK_PORT, SPI_SCK_PIN, false);
 
-	// Set pin direction to input
-	MISO_set_dir(PORT_DIR_IN);
-
-	MISO_set_pull_mode(
-	    // <y> Pull configuration
-	    // <id> pad_pull_config
-	    // <PORT_PULL_OFF"> Off
-	    // <PORT_PULL_UP"> Pull-up
-	    PORT_PULL_OFF);
-
-	// Set pin direction to output
-	MOSI_set_dir(PORT_DIR_OUT);
-
-	MOSI_set_level(
-	    // <y> Initial level
-	    // <id> pad_initial_level
-	    // <false"> Low
-	    // <true"> High
-	    false);
-
-	// Set pin direction to output
-	SCK_set_dir(PORT_DIR_OUT);
-
-	SCK_set_level(
-	    // <y> Initial level
-	    // <id> pad_initial_level
-	    // <false"> Low
-	    // <true"> High
-	    false);
-
-	SPI_0_init();
+    SPI_0_init();
+#endif
 }
 
-void PWM_0_initialization(void)
-{
-
-	PWM_0_init();
+void PWM_0_initialization(void) {
+#if USE_PWM
+    PWM_0_init();
+#endif
 }
 
-void TIMER_0_initialization(void)
-{
-
-	TIMER_0_init();
+void TIMER_0_initialization(void) {
+#if USE_TIMER
+    TIMER_0_init();
+#endif
 }
 
 /* configure pins and initialize registers */
-void USART_0_initialization(void)
-{
+void USART_0_initialization(void) {
+#if USE_USART
+    // Set pin direction to input
+    PORT_set_pin_dir(USART_RX_PORT, USART_RX_PIN, PORT_DIR_IN);
+    PORT_set_pin_pull_mode(USART_RX_PORT, USART_RX_PIN,
+                           // <y> Pull configuration
+                           // <id> pad_pull_config
+                           // <PORT_PULL_OFF"> Off
+                           // <PORT_PULL_UP"> Pull-up
+                           PORT_PULL_OFF);
 
-	// Set pin direction to input
-	RXD_set_dir(PORT_DIR_IN);
-
-	RXD_set_pull_mode(
-	    // <y> Pull configuration
-	    // <id> pad_pull_config
-	    // <PORT_PULL_OFF"> Off
-	    // <PORT_PULL_UP"> Pull-up
-	    PORT_PULL_OFF);
-
-	// Set pin direction to output
-	TXD_set_dir(PORT_DIR_OUT);
-
-	TXD_set_level(
-	    // <y> Initial level
-	    // <id> pad_initial_level
-	    // <false"> Low
-	    // <true"> High
-	    false);
-
-	USART_0_init();
+    // Set pin direction to output
+    PORT_set_pin_dir(USART_TX_PORT, USART_TX_PIN, PORT_DIR_OUT);
+    PORT_set_pin_level(USART_TX_PORT, USART_TX_PIN, false);
+    USART_0_init();
+#endif
 }
 
 /**
  * \brief System initialization
  */
-void system_init()
-{
-	mcu_init();
-
-	sysctrl_init();
-
-	FLASH_0_init();
-
-	WDT_0_init();
-
-	ADC_0_initialization();
-
-	AC_0_initialization();
-
-	I2C_0_initialization();
-
-	SPI_0_initialization();
-
-	PWM_0_initialization();
-
-	TIMER_0_initialization();
-
-	USART_0_initialization();
+void system_init() {
+    /* Deinit all peripherals and disable all IO Banks.
+     * What is needed will have to be turned on by application
+     */
+    mcu_init();
+    /* Set up system clock */
+    sysctrl_init();
+    FLASH_0_init();
+#if USE_WDT
+    WDT_0_init();
+#endif
+    ADC_0_initialization();
+    AC_0_initialization();
+    I2C_0_initialization();
+    SPI_0_initialization();
+    PWM_0_initialization();
+    TIMER_0_initialization();
+    USART_0_initialization();
 }

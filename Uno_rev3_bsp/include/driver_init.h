@@ -36,32 +36,68 @@
 #ifndef DRIVER_INIT_H_INCLUDED
 #define DRIVER_INIT_H_INCLUDED
 
-#include <compiler.h>
-#include <clock_config.h>
-#include <port.h>
+/* Default init: Usart and I2C enabled.
+ * These settings may be overridden by
+ * passing these defines in CmakeLists.txt as Compiler defines*/
+#ifndef USE_USART
+#define USE_USART 1
+#endif
+#ifndef USE_SPI
+#define USE_SPI 0
+#endif
+#ifndef USE_TIMER
+#define USE_TIMER 0
+#endif
+#ifndef USE_WDT
+#define USE_WDT 0
+#endif
+#ifndef USE_ADC
+#define USE_ADC 0
+#endif
+#ifndef USE_AC
+#define USE_AC 0
+#endif
+#ifndef USE_PWM
+#define USE_PWM 0
+#endif
+#ifndef USE_I2C
+#define USE_I2C 1
+#endif
+
 #include <atmel_start_pins.h>
+#include <clock_config.h>
+#include <compiler.h>
+#include <port.h>
 
-#include <sysctrl.h>
 #include <nvmctrl_basic.h>
+#include <sysctrl.h>
 
+#if USE_WDT
 #include <wdt.h>
+#endif
 #include <protected_io.h>
-
+#if USE_ADC
 #include <adc_basic.h>
-
+#endif
+#if USE_AC
 #include <ac.h>
-
+#endif
+#if USE_I2C
 #include <i2c_master.h>
-
+#endif
+#if USE_SPI
 #include <spi_basic.h>
-
+#endif
 #include <interrupt_avr8.h>
+#if USE_PWM
 #include <pwm_basic.h>
-
+#endif
+#if USE_TIMER
 #include <tc16.h>
-
+#endif
+#if USE_USART
 #include <usart_basic.h>
-
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif

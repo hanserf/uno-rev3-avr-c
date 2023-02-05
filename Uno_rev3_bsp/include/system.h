@@ -49,18 +49,17 @@ extern "C" {
 #define MCU_RESET_CAUSE_BOR (1 << BORF)
 #define MCU_RESET_CAUSE_WDT (1 << WDRF)
 
-static inline void mcu_init(void)
-{
-	/* On AVR devices all peripherals are enabled from power on reset, this
-	 * disables all peripherals to save power. Driver shall enable
-	 * peripheral if used */
+static inline void mcu_init(void) {
+    /* On AVR devices all peripherals are enabled from power on reset, this
+     * disables all peripherals to save power. Driver shall enable
+     * peripheral if used */
 
-	PRR = (1 << PRSPI) | (1 << PRTIM2) | (1 << PRTIM0) | (1 << PRTIM1) | (1 << PRTWI) | (1 << PRUSART0) | (1 << PRADC);
+    PRR = (1 << PRSPI) | (1 << PRTIM2) | (1 << PRTIM0) | (1 << PRTIM1) | (1 << PRTWI) | (1 << PRUSART0) | (1 << PRADC);
 
-	/* Set all pins to low power mode */
-	PORTB_set_port_dir(0xff, PORT_DIR_OFF);
-	PORTC_set_port_dir(0x7f, PORT_DIR_OFF);
-	PORTD_set_port_dir(0xff, PORT_DIR_OFF);
+    /* Set all pins to low power mode */
+    PORT_set_port_dir(IO_Port_B, 0xff, PORT_DIR_OFF);
+    PORT_set_port_dir(IO_Port_C, 0x7f, PORT_DIR_OFF);
+    PORT_set_port_dir(IO_Port_D, 0xff, PORT_DIR_OFF);
 }
 
 #ifdef __cplusplus

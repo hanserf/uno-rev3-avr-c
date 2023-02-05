@@ -1,13 +1,17 @@
-#include "usart_basic.h"
 #include "my_printf.h"
+#include "usart_basic.h"
 #include <stdarg.h>
 #include <stdio.h>
 
 static void my_putchar(unsigned char sdbyte);
 
-
 static void my_putchar(unsigned char sdbyte) {
+#if USE_USART
+    /* Will block until character is sent */
     USART_0_write(sdbyte);
+    while (USART_0_is_tx_busy()) {
+    }
+#endif
 }
 
 void my_printf(char *str, ...) {
@@ -21,8 +25,7 @@ void my_printf(char *str, ...) {
     if (rc > 0) {
         while (buf[i]) {
             my_putchar(buf[i]);
-         	while (USART_0_is_tx_busy()){}
-		    i++;
+            i++;
         }
     }
 }
